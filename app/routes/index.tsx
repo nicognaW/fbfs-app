@@ -66,7 +66,7 @@ export async function action({request}: DataFunctionArgs) {
    * Send HTTP request to backend
    */
   const res: String = await fetch(
-    '/api/fbfs',
+    `${process.env.BACKEND_URL}/api/fbfs`,
     {
       method: 'POST',
       headers: {
