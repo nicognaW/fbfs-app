@@ -1,15 +1,13 @@
-import { conform, useForm } from "@conform-to/react";
-import { getFieldsetConstraint, parse } from "@conform-to/zod";
-import { type DataFunctionArgs, json, redirect } from "@remix-run/node";
-import { Form, useActionData, useFormAction, useLoaderData, useLocation, useNavigation } from "@remix-run/react";
-import { z } from "zod";
-import { getPasswordHash } from "~/utils/auth.server.ts";
-import { prisma } from "~/utils/db.server.ts";
-import { ErrorList, Field } from "~/components/forms.tsx";
-import { AnimatedOutlet } from "~/utils/misc.ts";
-import { StatusButton } from "~/components/ui/status-button.tsx";
-import { useRef } from "react";
-import { CSSTransition, SwitchTransition } from "react-transition-group";
+import {conform, useForm} from "@conform-to/react";
+import {getFieldsetConstraint, parse} from "@conform-to/zod";
+import {type DataFunctionArgs, json} from "@remix-run/node";
+import {Form, useActionData, useFormAction, useLocation, useNavigation} from "@remix-run/react";
+import {z} from "zod";
+import {ErrorList, Field} from "~/components/forms.tsx";
+import {AnimatedOutlet} from "~/utils/misc.ts";
+import {StatusButton} from "~/components/ui/status-button.tsx";
+import {useRef} from "react";
+import {CSSTransition, SwitchTransition} from "react-transition-group";
 
 
 const fbfsFormSchema = z.object({
@@ -18,16 +16,12 @@ const fbfsFormSchema = z.object({
 });
 
 
-export async function loader({ request }: DataFunctionArgs) {
-  return json({});
-}
-
-export async function action({ request }: DataFunctionArgs) {
+export async function action({request}: DataFunctionArgs) {
   const formData = await request.formData();
   const submission = await parse(formData, {
     async: true,
     schema: fbfsFormSchema.superRefine(
-      async ({ fish_bigger, fish_smaller }, ctx) => {
+      async ({fish_bigger, fish_smaller}, ctx) => {
         if (!fish_bigger) {
           ctx.addIssue({
             path: ["fish_bigger"],
@@ -54,58 +48,59 @@ export async function action({ request }: DataFunctionArgs) {
     acceptMultipleErrors: () => true
   });
   if (submission.intent !== "submit") {
-    return json({ status: "idle", submission } as const);
+    return json({data: null, status: "idle", submission} as const);
   }
   if (!submission.value) {
     return json(
       {
+        data: null,
         status: "error",
         submission
       } as const,
-      { status: 400 }
+      {status: 400}
     );
   }
-  const { fish_bigger, fish_smaller } = submission.value;
-  
-  const res = "TODO: fill in the result";
-  
-  json(
-    { not: "coffee" },
-    {
-      status: 418,
-      headers: {
-        "Cache-Control": "no-store"
-      }
+  const {fish_bigger, fish_smaller} = submission.value;
+
+  /**
+   * Send HTTP request to backend
+   */
+  const res: String = await fetch(
+    `https://api.ihint.me/fbfs?fish_bigger=${fish_bigger}&fish_smaller=${fish_smaller}`
+  ).then((res) => res.text());
+
+  return json({data: res, status: "success", submission} as const, {
+    status: 418,
+    headers: {
+      "Cache-Control": "no-store"
     }
-  );
+  })
 }
 
 export default function FBFSApp() {
-  const data = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const formAction = useFormAction();
-  
+
   const location = useLocation();
   const nodeRef = useRef(null);
-  
+
   const isSubmitting =
     navigation.state === "submitting" &&
     navigation.formAction === formAction &&
     navigation.formMethod === "POST";
-  
+
   const [form, fields] = useForm({
     id: "fbfs",
     constraint: getFieldsetConstraint(fbfsFormSchema),
+    onValidate({formData}) {
+      return parse(formData, {schema: fbfsFormSchema});
+    },
     lastSubmission: actionData?.submission,
-    onValidate({ formData }) {
-      return parse(formData, { schema: fbfsFormSchema });
-    },
-    defaultValue: {
-    },
+    defaultValue: {},
     shouldRevalidate: "onBlur"
   });
-  
+
   return (
     <div className="container m-auto mb-36 mt-16 max-w-3xl">
       <div className="mt-16 flex flex-col gap-12">
@@ -114,22 +109,22 @@ export default function FBFSApp() {
             <Field
               className="col-span-3"
               labelProps={{
-                htmlFor: fields.username.id,
+                htmlFor: fields.fish_bigger.id,
                 children: "鱼越大"
               }}
-              inputProps={conform.input(fields.username)}
-              errors={fields.username.errors}
+              inputProps={conform.input(fields.fish_bigger)}
+              errors={fields.fish_bigger.errors}
             />
             <Field
               className="col-span-3"
-              labelProps={{ htmlFor: fields.name.id, children: "鱼越小" }}
-              inputProps={conform.input(fields.name)}
-              errors={fields.name.errors}
+              labelProps={{htmlFor: fields.fish_smaller.id, children: "鱼越小"}}
+              inputProps={conform.input(fields.fish_smaller)}
+              errors={fields.fish_smaller.errors}
             />
           </div>
-          
-          <ErrorList errors={form.errors} id={form.errorId} />
-          
+
+          <ErrorList errors={form.errors} id={form.errorId}/>
+
           <div className="mt-8 flex justify-center">
             <StatusButton
               type="submit"
@@ -139,12 +134,19 @@ export default function FBFSApp() {
               生成
             </StatusButton>
           </div>
+          {/*if `actionData?.data` is valid, display the data*/}
+          {actionData?.data && (
+            <div className="flex flex-col gap-4">
+              <div className="text-2xl font-bold">{actionData?.data}</div>
+            </div>
+          )}
+
         </Form>
       </div>
       <SwitchTransition>
         <CSSTransition key={location.pathname} timeout={150} nodeRef={nodeRef}>
           <div ref={nodeRef}>
-            <AnimatedOutlet />
+            <AnimatedOutlet/>
           </div>
         </CSSTransition>
       </SwitchTransition>
