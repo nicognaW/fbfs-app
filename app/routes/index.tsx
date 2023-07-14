@@ -66,8 +66,19 @@ export async function action({request}: DataFunctionArgs) {
    * Send HTTP request to backend
    */
   const res: String = await fetch(
-    `https://api.ihint.me/fbfs?fish_bigger=${fish_bigger}&fish_smaller=${fish_smaller}`
-  ).then((res) => res.text());
+    '/api/fbfs',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        fish_bigger,
+        fish_smaller
+      })
+    }
+  ).then((res) => res.json())
+    .then((res: any) => (res as { data: String }).data);
 
   return json({data: res, status: "success", submission} as const, {
     status: 418,
