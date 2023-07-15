@@ -10,7 +10,7 @@ import {Link, Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration, useLo
 import {withSentry} from '@sentry/remix'
 import {Confetti} from './components/confetti.tsx'
 import {GeneralErrorBoundary} from './components/error-boundary.tsx'
-import {href as iconsHref} from './components/ui/icon.tsx'
+import {href as iconsHref, Icon} from './components/ui/icon.tsx'
 import {Toaster} from './components/ui/toaster.tsx'
 import {ThemeSwitch, useTheme} from './routes/resources+/theme/index.tsx'
 import {getTheme} from './routes/resources+/theme/theme.server.ts'
@@ -25,6 +25,7 @@ import {combineHeaders, getDomainUrl} from './utils/misc.ts'
 import {useNonce} from './utils/nonce-provider.ts'
 import {makeTimings, time} from './utils/timing.server.ts'
 import {useToast} from './utils/useToast.tsx'
+import * as React from "react";
 
 export const links: LinksFunction = () => {
   return [
@@ -175,10 +176,11 @@ function App() {
         </div>
 
         <div className="container flex justify-between pb-5">
-          <Link to="/">
-            <div className="font-light">鱼越大</div>
-            <div className="font-bold">鱼越小生成器</div>
-          </Link>
+          <a href="https://github.com/nicognaW" target="_blank">
+            <Icon name="github">
+              <span className="sr-only">GitHub</span>
+            </Icon>
+          </a>
           <ThemeSwitch userPreference={data.requestInfo.userPrefs.theme}/>
         </div>
       </div>

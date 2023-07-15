@@ -147,7 +147,7 @@ export default function FBFSApp() {
           </div>
           {/*if `actionData?.data` is valid, display the data*/}
           {actionData?.data && (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 mt-8">
               <div className="text-2xl font-bold">{actionData?.data}</div>
             </div>
           )}
