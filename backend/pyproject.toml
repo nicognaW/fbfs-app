@@ -1,0 +1,23 @@
+[tool.pdm.build]
+includes = ["app"]
+
+[project]
+name = "lcs-playground"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "nicognaw", email = "nicognaw@outlook.com"},
+]
+dependencies = [
+    "langchain<1.0.0,>=0.0.223",
+    "google-search-results<3.0.0,>=2.4.2",
+    "openai<1.0.0,>=0.27.8",
+    "langchain-serve>=0.0.53",
+    "anthropic>=0.3.4",
+]
+requires-python = ">=3.11,<4.0"
+license = {text = "MIT"}
+readme = "README.md"
+
+[tool.setuptools.packages.find]
+where = ["app"]

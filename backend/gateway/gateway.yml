@@ -1,0 +1,130 @@
+apiVersion: v1
+data:
+  pythonunbuffered: '1'
+  worker_class: uvicorn.workers.UvicornH11Worker
+kind: ConfigMap
+metadata:
+  name: gateway-configmap
+  namespace: default
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: gateway
+  name: gateway
+  namespace: default
+spec:
+  ports:
+  - name: port
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: gateway
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        app: gateway
+        jina_deployment_name: gateway
+        ns: default
+        pod_type: GATEWAY
+        shard_id: ''
+    spec:
+      containers:
+      - args:
+        - gateway
+        - --extra-search-paths
+        - /workdir/lcserve
+        - --k8s-namespace
+        - default
+        - --cors
+        - --uvicorn-kwargs
+        - '{"ws_ping_interval": null, "ws_ping_timeout": null}'
+        - --expose-endpoints
+        - '{}'
+        - --host
+        - '0'
+        - --uses
+        - config.yml
+        - --uses-with
+        - '{"modules": ["app"], "fastapi_app_str": null, "lcserve_app": false}'
+        - --port
+        - '8080'
+        - --protocol
+        - WEBSOCKET
+        - --port-monitoring
+        - '57102'
+        command:
+        - jina
+        env:
+        - name: POD_UID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        - name: JINA_DEPLOYMENT_NAME
+          value: gateway
+        - name: K8S_DEPLOYMENT_NAME
+          value: gateway
+        - name: K8S_NAMESPACE_NAME
+          value: default
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        envFrom:
+        - configMapRef:
+            name: gateway-configmap
+        image: registry.hubble.jina.ai/executors/267k7lws:64ad007bfe38166d8f1c7868
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - sleep 2
+        livenessProbe:
+          exec:
+            command:
+            - jina
+            - ping
+            - gateway
+            - websocket://127.0.0.1:8080
+            - --timeout 9500
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 10
+        name: gateway
+        ports:
+        - containerPort: 8080
+        startupProbe:
+          exec:
+            command:
+            - jina
+            - ping
+            - gateway
+            - websocket://127.0.0.1:8080
+          failureThreshold: 120
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 10

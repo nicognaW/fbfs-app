@@ -1,0 +1,1 @@
+lc-serve deploy jcloud app.fishbiggerfishsmaller --name fbfs --platform linux/amd64 --env .env
